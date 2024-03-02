@@ -39,8 +39,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'drf_yasg',
     "rest_framework",
+    'rest_framework.authtoken',
     "corsheaders",
+    "tandau_app",
 ]
 
 MIDDLEWARE = [
@@ -133,3 +136,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 # https://docs.djangoproject.com/en/4.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+
+
+AUTH_USER_MODEL = 'tandau_app.CustomUser'
