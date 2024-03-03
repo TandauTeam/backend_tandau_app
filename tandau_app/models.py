@@ -21,3 +21,11 @@ class CustomUser(AbstractUser):
 class University(models.Model):
     name = models.CharField(max_length=255,null=True, blank=True)
     description = models.TextField()
+
+
+
+class Question(models.Model):
+    question_text_ru = models.TextField() # Russian question text
+    question_text_kz = models.TextField()  # Kazakh question text
+    person_type = models.CharField(max_length=50)  # Assuming the type of person is a string field
+
