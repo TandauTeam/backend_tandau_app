@@ -26,9 +26,13 @@ ALLOWED_HOSTS = ["*"]
 # Edit the following line and place your railway URL, and your custom URL in the array.
 CSRF_TRUSTED_ORIGINS = [
     "https://*.up.railway.app", 
+
+    "https://tandauapp-production.up.railway.app",
 ]
 
-
+CORS_ALLOWED_ORIGINS = [
+    '*',
+]
 # Application definition
 
 INSTALLED_APPS = [
