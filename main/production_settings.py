@@ -31,7 +31,8 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    '*',
+    'http://*',
+    'https://*',
 ]
 # Application definition
 
