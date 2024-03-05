@@ -22,6 +22,7 @@ DEBUG = True
 ALLOWED_HOSTS = ["*"]
 
 
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -137,5 +138,6 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
+CORS_ORIGIN_ALLOW_ALL = True
 
 AUTH_USER_MODEL = 'tandau_app.CustomUser'

@@ -7,9 +7,11 @@ from django.contrib.auth import authenticate, login, logout
 from .serializers import UserSerializer,LoginSerializer, QuestionSerializer
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+import requests
 from random import sample
 from .models import Question
-
+import os
+import json
 class LoginView(APIView):
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
@@ -89,3 +91,93 @@ class SelectQuestionsAddView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+class LocationSchoolsApiView(APIView):
+    def get(self, request, id, format=None):
+        # URL to fetch location data for the specified ID
+        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/school/{id}"
+
+        try:
+            # Send GET request to the URL
+            response = requests.get(url)
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Extract JSON data from the response
+                location_data = response.json()
+
+                extracted_data = []
+                for data in location_data["data"]:
+                    if 'id' in data and 'title_kz' in data and 'title_ru' in data:
+                        extracted_data.append({
+                            'id': data['id'],
+                            'title_kz': data['title_kz'],
+                            'title_ru': data['title_ru']
+                        })
+
+                return Response(extracted_data, status=status.HTTP_200_OK)
+            else:
+                # If the request was not successful, return an error response
+                return Response({"error": "Failed to fetch location data"}, status=response.status_code)
+        except Exception as e:
+            # If an exception occurs during the request, return an error response
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class LocationTownsApiView(APIView):
+    def get(self, request, id, format=None):
+        # URL to fetch location data for the specified ID
+        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/{id}/"
+
+        try:
+            # Send GET request to the URL
+            response = requests.get(url)
+
+            # Check if the request was successful
+            if response.status_code == 200:
+                # Extract JSON data from the response
+                location_data = response.json()
+                
+                # Extract only required fields where type is "DISTRICT"
+                filtered_data = []
+                for item in location_data['data']:
+                    if item['type'] == 'DISTRICT':
+                        filtered_data.append({
+                            'id': item['id'],
+                            'title_kz': item['title_kz'],
+                            'title_ru': item['title_ru']
+                        })
+
+                return Response(filtered_data, status=status.HTTP_200_OK)
+            else:
+                # If the request was not successful, return an error response
+                return Response({"error": "Failed to fetch location data"}, status=response.status_code)
+        except Exception as e:
+            # If an exception occurs during the request, return an error response
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+class LocationAPIView(APIView):
+    def get(self, request, format=None):
+        try:
+            # Read data from the JSON file
+            with open('tandau_app/location/state.json', 'r') as file:
+                data = json.load(file)
+
+            # Extract only required fields
+            extracted_data = []
+            for item in data:
+                extracted_item = {
+                    'id': item['id'],
+                    'title_kz': item['title_kz'],
+                    'title_ru': item['title_ru']
+                }
+                extracted_data.append(extracted_item)
+
+            return Response(extracted_data, status=status.HTTP_200_OK)
+        except Exception as e:
+            current_directory = os.getcwd()
+
+# Print the contents of the directory
+            print("Contents of the directory:", current_directory)
+            for item in os.listdir(current_directory):
+                print(item)
+            return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
