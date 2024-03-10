@@ -46,3 +46,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = ['id', 'question_text_ru', 'question_text_kz', 'person_type']
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()

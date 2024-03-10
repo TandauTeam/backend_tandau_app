@@ -4,14 +4,28 @@ from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth import authenticate, login, logout
-from .serializers import UserSerializer,LoginSerializer, QuestionSerializer
+from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import requests
+import random
+from string import digits
 from random import sample
 from .models import Question
+from .models import CustomUser
+from django.conf import settings
 import os
 import json
+from random import sample
+from django.db.models import Q
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+
+from .utils import send_reset_password_email
+from django.core.mail import send_mail
+
+
 class LoginView(APIView):
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
@@ -47,24 +61,20 @@ class RegisterView(generics.CreateAPIView):
 
 
 class SelectQuestionsView(APIView):
+
     def get(self, request):
-        # Query all questions grouped by person type
         questions_per_type = {}
-        for question in Question.objects.all():
+        for question in Question.objects.filter(person_type__range=(1, 9)):
             questions_per_type.setdefault(question.person_type, []).append(question)
 
         selected_questions = []
 
-        # Select 5 questions from each type
         for person_type, questions in questions_per_type.items():
             if len(questions) >= 5:
                 selected_questions.extend(sample(questions, 5))
             else:
-                selected_questions.extend(questions)  # Select all available questions if less than 5
-
-        # Serialize the selected questions
+                selected_questions.extend(questions)  
         serializer = QuestionSerializer(selected_questions, many=True)
-
         return Response(serializer.data)
 
 
@@ -94,9 +104,9 @@ class SelectQuestionsAddView(APIView):
 
 
 class LocationSchoolsApiView(APIView):
-    def get(self, request, id, format=None):
+    def get(self, request, town_id, format=None):
         # URL to fetch location data for the specified ID
-        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/school/{id}"
+        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/school/{town_id}"
 
         try:
             # Send GET request to the URL
@@ -107,15 +117,9 @@ class LocationSchoolsApiView(APIView):
                 location_data = response.json()
 
                 extracted_data = []
-                for data in location_data["data"]:
-                    if 'id' in data and 'title_kz' in data and 'title_ru' in data:
-                        extracted_data.append({
-                            'id': data['id'],
-                            'title_kz': data['title_kz'],
-                            'title_ru': data['title_ru']
-                        })
+                
 
-                return Response(extracted_data, status=status.HTTP_200_OK)
+                return Response(location_data, status=status.HTTP_200_OK)
             else:
                 # If the request was not successful, return an error response
                 return Response({"error": "Failed to fetch location data"}, status=response.status_code)
@@ -124,9 +128,9 @@ class LocationSchoolsApiView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 class LocationTownsApiView(APIView):
-    def get(self, request, id, format=None):
+    def get(self, request, state_id, format=None):
         # URL to fetch location data for the specified ID
-        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/{id}/"
+        url = f"https://edu-test-iam-service.azurewebsites.net/api/auth/location/{state_id}/"
 
         try:
             # Send GET request to the URL
@@ -136,18 +140,7 @@ class LocationTownsApiView(APIView):
             if response.status_code == 200:
                 # Extract JSON data from the response
                 location_data = response.json()
-                
-                # Extract only required fields where type is "DISTRICT"
-                filtered_data = []
-                for item in location_data['data']:
-                    if item['type'] == 'DISTRICT':
-                        filtered_data.append({
-                            'id': item['id'],
-                            'title_kz': item['title_kz'],
-                            'title_ru': item['title_ru']
-                        })
-
-                return Response(filtered_data, status=status.HTTP_200_OK)
+                return Response(location_data, status=status.HTTP_200_OK)
             else:
                 # If the request was not successful, return an error response
                 return Response({"error": "Failed to fetch location data"}, status=response.status_code)
@@ -166,7 +159,7 @@ class LocationAPIView(APIView):
             extracted_data = []
             for item in data:
                 extracted_item = {
-                    'id': item['id'],
+                    'state_id': item['id'],
                     'title_kz': item['title_kz'],
                     'title_ru': item['title_ru']
                 }
@@ -175,9 +168,25 @@ class LocationAPIView(APIView):
             return Response(extracted_data, status=status.HTTP_200_OK)
         except Exception as e:
             current_directory = os.getcwd()
-
-# Print the contents of the directory
-            print("Contents of the directory:", current_directory)
             for item in os.listdir(current_directory):
                 print(item)
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+
+
+
+# class ForgotPasswordView(APIView):
+#     def post(self, request):
+#         serializer = ForgotPasswordSerializer(data=request.data)
+#         if serializer.is_valid():
+#             email = serializer.validated_data['email']
+#             otp = ''.join(random.choices(digits, k=6))  # Generate OTP
+#             # You should associate this OTP with the user's email address for verification
+#             # For now, I'll just print it for demonstration purposes.
+#             # print("Generated OTP:", otp)
+#             # You can also save the OTP to a database or cache for verification later
+
+#             # Sending OTP to the user's email
+#             send_reset_password_email(email, otp)
+#             return Response({'message': 'An OTP has been sent to your email for password reset.'}, status=status.HTTP_200_OK)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

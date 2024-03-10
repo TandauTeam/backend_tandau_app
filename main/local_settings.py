@@ -2,7 +2,7 @@
 This settings file is for local development, it will automatically be used
 when you are in your local environment.
 """
-
+from datetime import timedelta
 import os
 from pathlib import Path
 
@@ -19,9 +19,7 @@ SECRET_KEY = "django-insecure-3l(vm@zmjb5rp)pcs@f4ht_73ex3k45h(8xq_c(_)9ww$old8s
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["*"]
-
-
+ALLOWED_HOSTS = ['127.0.0.1']
 
 # Application definition
 
@@ -37,8 +35,18 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     "corsheaders",
     "tandau_app",
+    'rest_framework_simplejwt',
 ]
-
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+}
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
+}
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
@@ -83,6 +91,15 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'tandau_app.validators.LowercaseValidator', },
     {'NAME': 'tandau_app.validators.SymbolValidator', },
 ]
+
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'tandauapp@gmail.com'
+EMAIL_HOST_PASSWORD ='2003720an'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_TIMEOUT = 300 # in seconds
+DEFAULT_FROM_EMAIL = 'sender name <your@djangoapp.com>'
+
 
 # Database
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
@@ -138,6 +155,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-CORS_ORIGIN_ALLOW_ALL = True
+# CORS_ORIGIN_ALLOW_ALL = True
+
 
 AUTH_USER_MODEL = 'tandau_app.CustomUser'
