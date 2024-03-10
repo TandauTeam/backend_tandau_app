@@ -8,22 +8,26 @@ from .serializers import *
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import requests
+from rest_framework.permissions import IsAuthenticated
+
 import random
 from string import digits
 from random import sample
 from .models import Question
 from .models import CustomUser
+from rest_framework.authentication import TokenAuthentication
+
 from django.conf import settings
 import os
 import json
 from random import sample
-from django.db.models import Q
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
+# from django.db.models import Q
+# from django.contrib.auth.tokens import default_token_generator
+# from django.utils.http import urlsafe_base64_encode
+# from django.utils.encoding import force_bytes
 
-from .utils import send_reset_password_email
-from django.core.mail import send_mail
+# from .utils import send_reset_password_email
+# from django.core.mail import send_mail
 
 
 class LoginView(APIView):
@@ -190,3 +194,27 @@ class LocationAPIView(APIView):
 #             send_reset_password_email(email, otp)
 #             return Response({'message': 'An OTP has been sent to your email for password reset.'}, status=status.HTTP_200_OK)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+
+
+class UserLocationCreateView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = UserLocationSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user  # Authenticated user
+            
+            # Retrieve state_id and school_id from serializer
+            school_id = serializer.validated_data['school_id']
+            state_id = serializer.validated_data['state_id']
+            
+            # Update only the location of the authenticated user
+            user.school_id = school_id
+            user.state_id = state_id
+            user.save()  # Save user object to persist changes
+            
+            return Response({'message': 'Location updated successfully'}, status=status.HTTP_200_OK)
+        
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

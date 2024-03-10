@@ -3,6 +3,7 @@ This settings file is for production, it will automatically be used
 when you are in production environment.
 """
 
+from datetime import timedelta
 
 import os
 from pathlib import Path

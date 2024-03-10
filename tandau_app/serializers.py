@@ -50,3 +50,9 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+
+class UserLocationSerializer(serializers.Serializer):
+    school_id = serializers.IntegerField()
+    state_id = serializers.IntegerField()
