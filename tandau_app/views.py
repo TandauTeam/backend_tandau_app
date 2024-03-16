@@ -197,24 +197,77 @@ class LocationAPIView(APIView):
         
 
 
-class UserLocationCreateView(APIView):
-    authentication_classes = [TokenAuthentication]
+
+
+class LocationUpdateAPIView(generics.UpdateAPIView):
+    queryset = CustomUser.objects.all()
+    serializer_class = LocationUpdateSerializer
     permission_classes = [IsAuthenticated]
 
-    def post(self, request):
-        serializer = UserLocationSerializer(data=request.data)
+    def get_object(self):
+        return self.request.user
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+class UserProfileView(generics.RetrieveAPIView):
+    serializer_class = UserProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def retrieve(self, request, *args, **kwargs):
+        # Retrieve the authenticated user
+        user = request.user
+
+        # Serialize the user profile data
+        serializer = self.get_serializer(user)
+
+        return Response(serializer.data)
+
+class CalculatePercentagesView(APIView):
+    def post(self, request, *args, **kwargs):
+        serializer = ResponseSerializer(data=request.data.get('responses', []), many=True)
         if serializer.is_valid():
-            user = request.user  # Authenticated user
-            
-            # Retrieve state_id and school_id from serializer
-            school_id = serializer.validated_data['school_id']
-            state_id = serializer.validated_data['state_id']
-            
-            # Update only the location of the authenticated user
-            user.school_id = school_id
-            user.state_id = state_id
-            user.save()  # Save user object to persist changes
-            
-            return Response({'message': 'Location updated successfully'}, status=status.HTTP_200_OK)
-        
+            responses = serializer.validated_data
+            person_types = {response['person_type'] for response in responses}
+            percentages = self.calculate_percentages(responses, person_types)
+            return Response(percentages, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def calculate_percentages(self, responses, person_types):
+        person_type_counts = {ptype: {"agree": 0, "neutral": 0, "disagree": 0, "half_agree": 0, "half_disagree": 0} for ptype in person_types}
+        total_responses = len(responses)
+
+        for response in responses:
+            person_type = response['person_type']
+            if person_type is not None:
+                category = self.categorize_response(response['person_answer'])
+                person_type_counts[person_type][category] += 1
+
+        percentages = {}
+        for ptype in person_types:
+            percentages[ptype] = {}
+            for category in ['agree', 'neutral', 'disagree', 'half_agree', 'half_disagree']:
+                count = person_type_counts[ptype][category]
+                print( count)
+                percentages[ptype][category] = (count / 5) * 100 if 5 > 0 else 0
+
+        return percentages
+
+    def categorize_response(self, response):
+        if response == 'agree':
+            return 'agree'
+        elif response == 'neutral':
+            return 'neutral'
+        elif response == 'disagree':
+            return 'disagree'
+        elif response == 'half_agree':
+            return 'half_agree'
+        elif response == 'half_disagree':
+            return 'half_disagree'
+        else:
+            return 'unknown'

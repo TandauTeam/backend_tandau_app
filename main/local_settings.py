@@ -43,7 +43,7 @@ REST_FRAMEWORK = {
     ],
 }
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=5),
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
 }
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
@@ -86,7 +86,7 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
     {'NAME': 'tandau_app.validators.NumberValidator',
         'OPTIONS': {
-            'min_digits': 1, }},
+            'min_digits': 8, }},
     {'NAME': 'tandau_app.validators.UppercaseValidator', },
     {'NAME': 'tandau_app.validators.LowercaseValidator', },
     {'NAME': 'tandau_app.validators.SymbolValidator', },

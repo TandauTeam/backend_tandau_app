@@ -4,10 +4,15 @@ from django.contrib.auth.password_validation import validate_password
 from .validators import NumberValidator, UppercaseValidator, LowercaseValidator, SymbolValidator
 from .models import Question
 
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['id', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
+
+
 class UserSerializer(serializers.ModelSerializer):
     password = serializers.CharField(
-        max_length=20,
-        min_length=8,
         write_only=True,
         style={'input_type': 'password'}
     )
@@ -17,18 +22,18 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'first_name', 'last_name', 'phone_number']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def validate_password(self, value):
-        validators = [
-            NumberValidator(),
-            UppercaseValidator(),
-            LowercaseValidator(),
-            SymbolValidator(),
-        ]
 
+    def validate(self, data):
+        password = data.get('password')
+        validators = [NumberValidator(), UppercaseValidator(), LowercaseValidator(), SymbolValidator()]
+
+        # Validate password
+        password_errors = []
         for validator in validators:
-            validator.validate(value)
+            validator.validate(password)
+      
+        return data
 
-        return value
 
     def create(self, validated_data):
         password = validated_data.pop('password')
@@ -36,11 +41,16 @@ class UserSerializer(serializers.ModelSerializer):
         return user
 
 
+
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
     password = serializers.CharField(style={'input_type': 'password'})
 
 
+class LocationUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = CustomUser
+        fields = ['state', 'town', 'school']
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -53,6 +63,16 @@ class ForgotPasswordSerializer(serializers.Serializer):
 
 
 
-class UserLocationSerializer(serializers.Serializer):
-    school_id = serializers.IntegerField()
-    state_id = serializers.IntegerField()
+
+
+
+
+class ResponseSerializer(serializers.Serializer):
+    person_type = serializers.IntegerField()
+    person_answer = serializers.CharField()
+
+    def to_representation(self, instance):
+        return {
+            "person_type": instance['person_type'],
+            "person_answer": instance['person_answer']
+        }

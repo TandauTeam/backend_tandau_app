@@ -7,7 +7,7 @@ from tandau_app.manager import *
 class CustomUser(AbstractUser):
     username = None
     email = models.EmailField(_('email address'), unique=True)
-    phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Phone number must be entered in the format: '+999999999'. Up to 15 digits allowed.")
+    phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Телефон нөмірі форматта енгізілуі керек:'+7(***)-***-**-**'.")
     phone_number = models.CharField(validators=[phone_regex], max_length=17, null=True, blank=True)
     image = models.ImageField(upload_to='user_images', null=True, blank=True)
     state = models.CharField(max_length=255)
