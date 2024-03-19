@@ -1,3 +1,4 @@
+import re
 from rest_framework import serializers
 from .models import CustomUser
 from django.contrib.auth.password_validation import validate_password
@@ -22,16 +23,19 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ['email', 'password', 'first_name', 'last_name', 'phone_number']
         extra_kwargs = {'password': {'write_only': True}}
 
+    # def validate_phone_number(self, value):
+    #     # Custom phone number validation logic
+    #     if not re.match(r'^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$', value):
+    #         error_message = _("Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'.")
+    #         raise serializers.ValidationError({'detail': error_message})
+    #     return value
 
     def validate(self, data):
         password = data.get('password')
         validators = [NumberValidator(), UppercaseValidator(), LowercaseValidator(), SymbolValidator()]
 
-        # Validate password
-        password_errors = []
         for validator in validators:
             validator.validate(password)
-      
         return data
 
 

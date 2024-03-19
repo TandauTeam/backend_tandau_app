@@ -9,8 +9,10 @@ from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 import requests
 from rest_framework.permissions import IsAuthenticated
-
+from rest_framework.exceptions import ValidationError
 import random
+from rest_framework.exceptions import ValidationError
+from .validators import CustomValidationException
 from string import digits
 from random import sample
 from .models import Question
@@ -63,6 +65,28 @@ class RegisterView(generics.CreateAPIView):
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
+    def create(self, request, *args, **kwargs):
+        try:
+            response = super().create(request, *args, **kwargs)
+            return response
+        except CustomValidationException as e:
+            # Handle custom validation exception
+            error_detail = e.error_dict
+            
+            return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
+        except ValidationError as e:
+            # Handle other validation errors
+            if 'email' in e.detail and 'user with this email address already exists.' in e.detail['email']:
+                error_detail = {'detail': 'Осы электрондық пошта мекенжайы бар пайдаланушы бұрыннан бар.'}
+                return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
+            elif 'phone_number' in e.detail and "Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'." in e.detail['phone_number']:
+                error_detail = {'detail':"Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'."}
+                return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
+            elif 'phone_number' in e.detail:
+                return Response({'detail':e},status=status.HTTP_400_BAD_REQUEST)
+            else:
+                # For other validation errors, return the default error response
+                return super().handle_exception(e)
 
 class SelectQuestionsView(APIView):
 
