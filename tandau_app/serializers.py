@@ -20,15 +20,9 @@ class UserSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['email', 'password', 'first_name', 'last_name', 'phone_number']
+        fields = ['id','email', 'password', 'first_name', 'last_name', 'phone_number']
         extra_kwargs = {'password': {'write_only': True}}
 
-    # def validate_phone_number(self, value):
-    #     # Custom phone number validation logic
-    #     if not re.match(r'^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$', value):
-    #         error_message = _("Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'.")
-    #         raise serializers.ValidationError({'detail': error_message})
-    #     return value
 
     def validate(self, data):
         password = data.get('password')
@@ -42,7 +36,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = CustomUser.objects.create_user(password=password, **validated_data)
-        return user
+        return user.id
 
 
 
@@ -64,10 +58,6 @@ class QuestionSerializer(serializers.ModelSerializer):
 
 class ForgotPasswordSerializer(serializers.Serializer):
     email = serializers.EmailField()
-
-
-
-
 
 
 

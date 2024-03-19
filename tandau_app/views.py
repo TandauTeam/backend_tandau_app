@@ -226,10 +226,14 @@ class LocationAPIView(APIView):
 class LocationUpdateAPIView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = LocationUpdateSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        return self.request.user
+            user_id = self.request.data.get('user_id')  # Get the user_id from request data
+            try:
+                return CustomUser.objects.get(id=user_id)  # Retrieve the user based on user_id
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
@@ -239,18 +243,22 @@ class LocationUpdateAPIView(generics.UpdateAPIView):
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
 class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
-        # Retrieve the authenticated user
-        user = request.user
+        user_id = request.data.get('user_id')  # Get the user_id from request data
+        if user_id is not None:
+            try:
+                user = CustomUser.objects.get(pk=user_id)  # Retrieve the user based on user_id
+            except CustomUser.DoesNotExist:
+                return Response({'error': 'User does not exist'}, status=404)
 
-        # Serialize the user profile data
-        serializer = self.get_serializer(user)
-
-        return Response(serializer.data)
+            serializer = self.get_serializer(user)
+            return Response(serializer.data)
+        else:
+            return Response({'error': 'Please provide a user_id in the request body'}, status=400)
 
 class CalculatePercentagesView(APIView):
     def post(self, request, *args, **kwargs):
@@ -295,3 +303,16 @@ class CalculatePercentagesView(APIView):
             return 'half_disagree'
         else:
             return 'unknown'
+
+
+
+
+class UserLoginAPIView(APIView):
+    def post(self, request, format=None):
+        serializer = LoginSerializer(data=request.data)
+        if serializer.is_valid():
+            email = serializer.validated_data['email']
+            password = serializer.validated_data['password']
+            user = CustomUser.objects.get(email=email)
+            return Response({'user_id': user.id}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

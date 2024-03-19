@@ -8,8 +8,10 @@ urlpatterns = [
     path('profile/', views.UserProfileView.as_view(), name='profile'),
     path('profile/update-location/', views.LocationUpdateAPIView.as_view(), name='update-location'),
 
-    path('login/', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
-    path('login/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('login/v1', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('login/v1/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),
+    path('login/v2', views.UserLoginAPIView.as_view(), name='user-login/v2'),
+
     path('logout/', views.LogoutView.as_view(), name='logout'),
 
     # path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
