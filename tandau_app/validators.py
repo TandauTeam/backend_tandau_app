@@ -42,7 +42,7 @@ class SymbolValidator(object):
 class PhoneValidator(object):
     @staticmethod
     def validate(phone):
-        if not re.match(r'^\+7\(\d{3}\)-\d{3}-\d{2}-\d{2}$', phone):
-            error_message = _("Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'.") 
+        if not re.match(r'^\+7\d{10}$', phone):
+            error_message = _("Телефон нөмірі форматта енгізілуі керек: '+7XXXXXXXXXX', қайталаңыз.") 
             raise CustomValidationException({'detail': error_message})
         

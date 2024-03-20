@@ -7,6 +7,8 @@ from .models import Question
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    id = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
+
     class Meta:
         model = CustomUser
         fields = ['id', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
@@ -17,6 +19,9 @@ class UserSerializer(serializers.ModelSerializer):
         write_only=True,
         style={'input_type': 'password'}
     )
+    id = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
+
+
 
     class Meta:
         model = CustomUser
@@ -36,7 +41,7 @@ class UserSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         password = validated_data.pop('password')
         user = CustomUser.objects.create_user(password=password, **validated_data)
-        return user.id
+        return user
 
 
 
@@ -46,6 +51,7 @@ class LoginSerializer(serializers.Serializer):
 
 
 class LocationUpdateSerializer(serializers.ModelSerializer):
+    # id = serializers.UUIDField(source='pk', read_only=True)  
     class Meta:
         model = CustomUser
         fields = ['state', 'town', 'school']

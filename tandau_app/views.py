@@ -221,28 +221,27 @@ class LocationAPIView(APIView):
         
 
 
-
-
 class LocationUpdateAPIView(generics.UpdateAPIView):
     queryset = CustomUser.objects.all()
     serializer_class = LocationUpdateSerializer
 
     def get_object(self):
-            user_id = self.request.data.get('user_id')  # Get the user_id from request data
-            try:
-                return CustomUser.objects.get(id=user_id)  # Retrieve the user based on user_id
-            except CustomUser.DoesNotExist:
-                return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
-
+        user_id = self.request.data.get('user_id')  # Get the user_id from request data
+        try:
+            return CustomUser.objects.get(id=user_id)  # Retrieve the user based on user_id
+        except CustomUser.DoesNotExist:
+            return None  # Return None if user does not exist
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
+        if instance is None:
+            return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+        
         serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data, status=status.HTTP_200_OK)
-
 
 class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
