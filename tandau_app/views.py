@@ -314,19 +314,9 @@ class UserLoginAPIView(APIView):
             password = serializer.validated_data['password']
             user = authenticate(request, email=email, password=password)
             if user:
-                data = {
-                    "email":email,
-                    "password":password
-                }
-                url = "https://tandauapp-production.up.railway.app/tandau/login/v1"
-                print(data)
-                response = requests.post(url, data)
-                if response.status_code == 200:
-                    token = response.json()
-                    return Response({'user_id': user.id, 'access_token':token['access'] }, status=status.HTTP_200_OK)
+                token, _ = Token.objects.get_or_create(user=user)
+                return Response({'user_id': user.id, 'token': token.key}, status=status.HTTP_200_OK)
             
-                else:
-                    print('Login failed:', response.json())
                 # return Response({'user_id': user.id, 'access_token':token }, status=status.HTTP_200_OK)
             else:
                 # If authentication fails, return error message
