@@ -53,7 +53,7 @@ class LoginSerializer(serializers.Serializer):
 class LocationUpdateSerializer(serializers.ModelSerializer): 
     class Meta:
         model = CustomUser
-        fields = ['state', 'town', 'school']
+        fields = ['state', 'town', 'school','classes']
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
