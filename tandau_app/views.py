@@ -228,7 +228,7 @@ class LocationUpdateAPIView(generics.UpdateAPIView):
     def get_object(self):
         user_id = self.request.data.get('user_id')  # Get the user_id from request data
         try:
-            return CustomUser.objects.get(id=user_id)  # Retrieve the user based on user_id
+            return CustomUser.objects.get(uuid=user_id)  # Retrieve the user based on user_id
         except CustomUser.DoesNotExist:
             return None  # Return None if user does not exist
 
@@ -313,5 +313,5 @@ class UserLoginAPIView(APIView):
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
             user = CustomUser.objects.get(email=email)
-            return Response({'user_id': user.id}, status=status.HTTP_201_CREATED)
+            return Response({'user_id': user.uuid}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

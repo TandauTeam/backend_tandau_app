@@ -11,7 +11,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = CustomUser
-        fields = ['uuiid', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
+        fields = ['uuid', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -51,10 +51,10 @@ class LoginSerializer(serializers.Serializer):
 
 
 class LocationUpdateSerializer(serializers.ModelSerializer):
-    # id = serializers.UUIDField(source='pk', read_only=True)  
+    id = serializers.UUIDField(source='pk', read_only=True)  
     class Meta:
         model = CustomUser
-        fields = ['state', 'town', 'school']
+        fields = ['id','state', 'town', 'school']
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
