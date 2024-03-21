@@ -321,13 +321,15 @@ class UserLoginAPIView(APIView):
                     "password":password
                 }
                 url = "https://tandauapp-production.up.railway.app/tandau/login/v1"
+                print(data)
                 response = requests.post(url, data)
                 if response.status_code == 200:
-                    token = response.json().get('access_token')
-                    
+                    token = response.json()
+                    return Response({'user_id': user.id, 'access_token':token['access'] }, status=status.HTTP_200_OK)
+            
                 else:
                     print('Login failed:', response.json())
-                return Response({'user_id': user.uuid, 'access_token':token }, status=status.HTTP_200_OK)
+                # return Response({'user_id': user.id, 'access_token':token }, status=status.HTTP_200_OK)
             else:
                 # If authentication fails, return error message
                 return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
