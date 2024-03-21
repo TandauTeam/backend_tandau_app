@@ -14,6 +14,7 @@ import random
 from rest_framework.exceptions import ValidationError
 from .validators import CustomValidationException
 from string import digits
+import requests
 from random import sample
 from .models import Question
 from .models import CustomUser
@@ -310,8 +311,24 @@ class UserLoginAPIView(APIView):
     def post(self, request, format=None):
         serializer = LoginSerializer(data=request.data)
         if serializer.is_valid():
+
             email = serializer.validated_data['email']
             password = serializer.validated_data['password']
-            user = CustomUser.objects.get(email=email)
-            return Response({'user_id': user.uuid}, status=status.HTTP_201_CREATED)
+            user = authenticate(request, email=email, password=password)
+            if user:
+                data = {
+                    "email":email,
+                    "password":password
+                }
+                url = "https://tandauapp-production.up.railway.app/tandau/login/v1"
+                response = requests.post(url, data)
+                if response.status_code == 200:
+                    token = response.json().get('access_token')
+                    
+                else:
+                    print('Login failed:', response.json())
+                return Response({'user_id': user.uuid, 'access_token':token }, status=status.HTTP_200_OK)
+            else:
+                # If authentication fails, return error message
+                return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
