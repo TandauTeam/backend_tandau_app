@@ -4,7 +4,7 @@ from .models import CustomUser,Question
 
 @admin.register(CustomUser)
 class UserAdmin(admin.ModelAdmin):
-    list_display = ('id','first_name','last_name','username','image')
+    list_display = ('first_name','last_name','username','image')
 
 
 
