@@ -247,17 +247,17 @@ class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        user_id = request.data.get('user_id')  # Get the user_id from request data
+        user_id = kwargs.get('user_id')  # Get the user_id from URL parameters
         if user_id is not None:
             try:
                 user = CustomUser.objects.get(pk=user_id)  # Retrieve the user based on user_id
             except CustomUser.DoesNotExist:
-                return Response({'error': 'User does not exist'}, status=404)
+                return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
             serializer = self.get_serializer(user)
             return Response(serializer.data)
         else:
-            return Response({'error': 'Please provide a user_id in the request body'}, status=400)
+            return Response({'error': 'Please provide a user_id in the URL parameters'}, status=status.HTTP_400_BAD_REQUEST)
 
 class CalculatePercentagesView(APIView):
     def post(self, request, *args, **kwargs):

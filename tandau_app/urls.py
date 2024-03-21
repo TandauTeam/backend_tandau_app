@@ -5,7 +5,7 @@ from rest_framework_simplejwt import views as jwt_views
 urlpatterns = [
 
 
-    path('profile/', views.UserProfileView.as_view(), name='profile'),
+    path('profile/<str:user_id>/', views.UserProfileView.as_view(), name='user_profile'),
     path('profile/update-location/', views.LocationUpdateAPIView.as_view(), name='update-location'),
 
     path('login/v1', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
