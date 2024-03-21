@@ -50,11 +50,10 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
 
-class LocationUpdateSerializer(serializers.ModelSerializer):
-    id = serializers.UUIDField(source='pk', read_only=True)  
+class LocationUpdateSerializer(serializers.ModelSerializer): 
     class Meta:
         model = CustomUser
-        fields = ['id','state', 'town', 'school']
+        fields = ['state', 'town', 'school']
 
 class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
