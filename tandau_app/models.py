@@ -16,7 +16,7 @@ class CustomUser(AbstractUser):
     state = models.CharField(max_length=255)
     town = models.CharField(max_length=255)
     school = models.CharField(max_length=255)
-    classes = models.IntegerField()
+    classes = models.IntegerField(null=True)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
