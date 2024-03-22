@@ -7,11 +7,11 @@ from .models import Question
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
-    uuid = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
+    user_id = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
 
     class Meta:
         model = CustomUser
-        fields = ['uuid', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
+        fields = ['user_id', 'email', 'first_name', 'last_name', 'phone_number','state','town','school']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -19,13 +19,13 @@ class UserSerializer(serializers.ModelSerializer):
         write_only=True,
         style={'input_type': 'password'}
     )
-    uuid = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
+    user_id = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
 
 
 
     class Meta:
         model = CustomUser
-        fields = ['uuid','email', 'password', 'first_name', 'last_name', 'phone_number']
+        fields = ['user_id','email', 'password', 'first_name', 'last_name', 'phone_number']
         extra_kwargs = {'password': {'write_only': True}}
 
 
