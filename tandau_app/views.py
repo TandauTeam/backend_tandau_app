@@ -14,9 +14,11 @@ import random
 from rest_framework.exceptions import ValidationError
 from .validators import CustomValidationException
 from string import digits
+import math
 import requests
 from random import sample
 from .models import Question
+from collections import defaultdict
 from .models import CustomUser
 from rest_framework.authentication import TokenAuthentication
 
@@ -24,13 +26,8 @@ from django.conf import settings
 import os
 import json
 from random import sample
-# from django.db.models import Q
-# from django.contrib.auth.tokens import default_token_generator
-# from django.utils.http import urlsafe_base64_encode
-# from django.utils.encoding import force_bytes
-
-# from .utils import send_reset_password_email
-# from django.core.mail import send_mail
+from django.db.models import IntegerField
+from django.db.models.functions import Cast
 
 
 class LoginView(APIView):
@@ -89,16 +86,22 @@ class RegisterView(generics.CreateAPIView):
                 # For other validation errors, return the default error response
                 return super().handle_exception(e)
 
+
 class SelectQuestionsView(APIView):
 
     def get(self, request):
         questions_per_type = {}
-        for question in Question.objects.filter(person_type__range=(1, 9)):
+
+        # Convert person_type to integer for sorting
+        questions = Question.objects.annotate(person_type_int=Cast('person_type', IntegerField())).filter(person_type__range=(1, 9))
+
+        for question in questions:
             questions_per_type.setdefault(question.person_type, []).append(question)
 
         selected_questions = []
 
-        for person_type, questions in questions_per_type.items():
+        # Sort by person_type integer
+        for person_type, questions in sorted(questions_per_type.items(), key=lambda x: int(x[0])):
             if len(questions) >= 5:
                 selected_questions.extend(sample(questions, 5))
             else:
@@ -258,49 +261,6 @@ class UserProfileView(generics.RetrieveAPIView):
         else:
             return Response({'error': 'Please provide a user_id in the URL parameters'}, status=status.HTTP_400_BAD_REQUEST)
 
-class CalculatePercentagesView(APIView):
-    def post(self, request, *args, **kwargs):
-        serializer = ResponseSerializer(data=request.data.get('responses', []), many=True)
-        if serializer.is_valid():
-            responses = serializer.validated_data
-            person_types = {response['person_type'] for response in responses}
-            percentages = self.calculate_percentages(responses, person_types)
-            return Response(percentages, status=status.HTTP_200_OK)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-    def calculate_percentages(self, responses, person_types):
-        person_type_counts = {ptype: {"agree": 0, "neutral": 0, "disagree": 0, "half_agree": 0, "half_disagree": 0} for ptype in person_types}
-        total_responses = len(responses)
-
-        for response in responses:
-            person_type = response['person_type']
-            if person_type is not None:
-                category = self.categorize_response(response['person_answer'])
-                person_type_counts[person_type][category] += 1
-
-        percentages = {}
-        for ptype in person_types:
-            percentages[ptype] = {}
-            for category in ['agree', 'neutral', 'disagree', 'half_agree', 'half_disagree']:
-                count = person_type_counts[ptype][category]
-                print( count)
-                percentages[ptype][category] = (count / 5) * 100 if 5 > 0 else 0
-
-        return percentages
-
-    def categorize_response(self, response):
-        if response == 'agree':
-            return 'agree'
-        elif response == 'neutral':
-            return 'neutral'
-        elif response == 'disagree':
-            return 'disagree'
-        elif response == 'half_agree':
-            return 'half_agree'
-        elif response == 'half_disagree':
-            return 'half_disagree'
-        else:
-            return 'unknown'
 
 
 
@@ -322,3 +282,43 @@ class UserLoginAPIView(APIView):
                 # If authentication fails, return error message
                 return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class CalculatePercentageView(APIView):
+
+    def post(self, request):
+        responses = request.data.get('responses', [])
+
+        # Dictionary to store the sum of person_answer for each person_type
+        answer_sum_per_type = defaultdict(int)
+
+        # Iterate through responses and accumulate person_answer values
+        for response in responses:
+            person_type = response.get('person_type')
+            person_answer = response.get('person_answer')
+            answer_sum_per_type[person_type] += person_answer
+
+        # Calculate percentage for each person type
+        results = {}
+        list_results = []
+        max_percentage = -1  # Initialize max_percentage to a value lower than any possible percentage
+        max_person_type = None  # Variable to store the person_type with the highest percentage
+        for person_type, answer_sum in answer_sum_per_type.items():
+            percentage = (answer_sum / (len(responses) * 9)) * 100  # Assuming each person type has 9 questions
+            result = {"person_type": person_type, "result": math.ceil(percentage)}
+            list_results.append(result)
+
+            # Update max_person_type if the current percentage is higher than max_percentage
+            if percentage > max_percentage:
+                max_percentage = percentage
+                max_person_type = person_type
+
+        # Mark the result with the highest percentage as primary
+        for result in list_results:
+            if result['person_type'] == max_person_type:
+                result['primary'] = True
+            else:
+                result['primary'] = False
+
+        results["list_result"] = list_results
+        return Response(results)
