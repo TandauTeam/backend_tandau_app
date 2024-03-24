@@ -223,27 +223,29 @@ class LocationAPIView(APIView):
 #             return Response({'message': 'An OTP has been sent to your email for password reset.'}, status=status.HTTP_200_OK)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
-
-class LocationUpdateAPIView(generics.UpdateAPIView):
+class LocationUpdateAPIView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
-    serializer_class = LocationUpdateSerializer
+    serializer_class = LocationSerializer
+    def post(self, request, *args, **kwargs):
+        # Get user_id from URL parameters
+        user_id = self.kwargs.get('pk')
 
-    def get_object(self):
-        user_id = self.kwargs.get('pk')  # Get the user_id from URL parameters
+        # Check if the user exists
         try:
-            return CustomUser.objects.get(id=user_id)  # Retrieve the user based on user_id
+            user = CustomUser.objects.get(id=user_id)
+            # Update the user's location
+            serializer = self.get_serializer(user, data=request.data)
         except CustomUser.DoesNotExist:
-            return None  # Return None if user does not exist
+            # Create a new user with the specified location
+            serializer = self.get_serializer(data={'id': user_id, **request.data})
 
-    def update(self, request, *args, **kwargs):
-        instance = self.get_object()
-        if instance is None:
-            return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
-        
-        serializer = self.get_serializer(instance, data=request.data)
+        # Validate the serializer
         serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+
+        # Save the location data for the user
+        serializer.save()
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer

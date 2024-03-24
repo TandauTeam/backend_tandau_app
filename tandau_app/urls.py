@@ -6,7 +6,7 @@ urlpatterns = [
 
 
     path('profile/<str:user_id>/', views.UserProfileView.as_view(), name='user_profile'),
-    path('profile/update-location/<str:pk>', views.LocationUpdateAPIView.as_view(), name='update-location'),
+    path('register/location/<str:pk>', views.LocationUpdateAPIView.as_view(), name='update-location'),
 
     path('login/v1', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('login/v1/refresh/', jwt_views.TokenRefreshView.as_view(), name='token_refresh'),

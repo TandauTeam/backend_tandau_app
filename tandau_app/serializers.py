@@ -50,7 +50,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(style={'input_type': 'password'})
 
 
-class LocationUpdateSerializer(serializers.ModelSerializer): 
+class LocationSerializer(serializers.ModelSerializer): 
     class Meta:
         model = CustomUser
         fields = ['state', 'town', 'school','classes']
