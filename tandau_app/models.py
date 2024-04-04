@@ -36,3 +36,13 @@ class Question(models.Model):
     question_text_kz = models.TextField()  # Kazakh question text
     person_type = models.CharField(max_length=50)  # Assuming the type of person is a string field
 
+
+
+class UserQuote(models.Model):
+    user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
+    quote = models.TextField()
+    author = models.CharField(max_length=255,null=True)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.user.username} - {self.quote}'

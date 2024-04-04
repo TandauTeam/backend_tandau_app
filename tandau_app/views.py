@@ -21,7 +21,9 @@ from .models import Question
 from collections import defaultdict
 from .models import CustomUser
 from rest_framework.authentication import TokenAuthentication
-
+from django.http import JsonResponse
+from django.utils import timezone
+from datetime import timedelta
 from django.conf import settings
 import os
 import json
@@ -205,23 +207,6 @@ class LocationAPIView(APIView):
             return Response({"error": str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
         
 
-
-
-# class ForgotPasswordView(APIView):
-#     def post(self, request):
-#         serializer = ForgotPasswordSerializer(data=request.data)
-#         if serializer.is_valid():
-#             email = serializer.validated_data['email']
-#             otp = ''.join(random.choices(digits, k=6))  # Generate OTP
-#             # You should associate this OTP with the user's email address for verification
-#             # For now, I'll just print it for demonstration purposes.
-#             # print("Generated OTP:", otp)
-#             # You can also save the OTP to a database or cache for verification later
-
-#             # Sending OTP to the user's email
-#             send_reset_password_email(email, otp)
-#             return Response({'message': 'An OTP has been sent to your email for password reset.'}, status=status.HTTP_200_OK)
-#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         
 class LocationUpdateAPIView(generics.CreateAPIView):
     queryset = CustomUser.objects.all()
@@ -264,9 +249,6 @@ class UserProfileView(generics.RetrieveAPIView):
             return Response({'error': 'Please provide a user_id in the URL parameters'}, status=status.HTTP_400_BAD_REQUEST)
 
 
-
-
-
 class UserLoginAPIView(APIView):
     def post(self, request, format=None):
         serializer = LoginSerializer(data=request.data)
@@ -289,6 +271,8 @@ class UserLoginAPIView(APIView):
 class CalculatePercentageView(APIView):
 
     def post(self, request):
+        with open('tandau_app/location/person_types.json', 'r') as f:
+            json_data = json.load(f)
         responses = request.data.get('responses', [])
 
         # Dictionary to store the sum of person_answer for each person_type
@@ -301,26 +285,78 @@ class CalculatePercentageView(APIView):
             answer_sum_per_type[person_type] += person_answer
 
         # Calculate percentage for each person type
-        results = {}
-        list_results = []
         max_percentage = -1  # Initialize max_percentage to a value lower than any possible percentage
         max_person_type = None  # Variable to store the person_type with the highest percentage
         for person_type, answer_sum in answer_sum_per_type.items():
-            percentage = (answer_sum / (len(responses) * 9)) * 100  # Assuming each person type has 9 questions
-            result = {"person_type": person_type, "result": math.ceil(percentage)}
-            list_results.append(result)
-
-            # Update max_person_type if the current percentage is higher than max_percentage
+            percentage = (answer_sum / 5 * 10) * 100  # Assuming each person type has 9 questions
             if percentage > max_percentage:
                 max_percentage = percentage
                 max_person_type = person_type
+        
+        for data in json_data:
+            if max_person_type in data:
+                person_info = data[max_person_type]
+                title_name = person_info['title_name']
+                description = person_info['description']
+                image = person_info['image']
+                list_info = person_info['list_info']
+                profession_list = person_info['profession_list']
 
-        # Mark the result with the highest percentage as primary
-        for result in list_results:
-            if result['person_type'] == max_person_type:
-                result['primary'] = True
+
+                response_data = {
+                    "title_name": title_name,
+                    "description": description,
+                    "image": image,
+                    "list_info": list_info,
+                    "profession_list": profession_list
+                }
+                return JsonResponse(response_data)
+
+        # If the person type with maximum points is not found in the JSON data
+        return JsonResponse({"error": "Person type not found in JSON data"}, status=404)
+
+            
+    
+class RandomUserQuoteView(APIView):
+    def post(self, request, format=None):
+        user_id = request.data.get('user_id')  # Get user_id from request body
+        if not user_id:
+            return Response({'error': 'user_id is required in request body'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)  # Retrieve user object using user_id
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Check if the user already has a quote generated within the last 24 hours
+        last_quote = UserQuote.objects.filter(user=user, timestamp__gte=timezone.now()-timedelta(days=1)).first()
+        if last_quote:
+            # If a quote exists, return it
+            serializer = UserQuoteSerializer(last_quote)
+            return Response(serializer.data)
+        else:
+            # Load quotes from JSON file
+            with open('tandau_app/location/quotes.json', 'r') as file:
+                all_quotes = json.load(file)
+            
+            if not all_quotes:
+                return Response({}, status=status.HTTP_204_NO_CONTENT)
             else:
-                result['primary'] = False
-
-        results["list_result"] = list_results
-        return Response(results)
+                # Get quotes that the user has already used
+                used_quotes = UserQuote.objects.filter(user=user).values_list('quote', flat=True)
+                # Filter out used quotes
+                available_quotes = [quote for quote in all_quotes if quote['kz_quotes'] not in used_quotes]
+                if not available_quotes:
+                    return Response({}, status=status.HTTP_204_NO_CONTENT)
+                else:
+                    # Select a random quote from the available quotes
+                    random_quote = random.choice(available_quotes)
+                    # Save the selected quote for the user
+                    user_quote = UserQuote.objects.create(user=user, quote=random_quote['kz_quotes'], author=random_quote['author'])
+                    serializer = UserQuoteSerializer(user_quote)
+                    # Return the quote along with the author
+                    response_data = {
+                        'kz_quotes': random_quote['kz_quotes'],
+                        'author': random_quote['author']
+                    }
+                    return Response(response_data)

@@ -3,7 +3,7 @@ from rest_framework import serializers
 from .models import CustomUser
 from django.contrib.auth.password_validation import validate_password
 from .validators import NumberValidator, UppercaseValidator, LowercaseValidator, SymbolValidator
-from .models import Question
+from .models import Question,UserQuote
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
@@ -20,7 +20,6 @@ class UserSerializer(serializers.ModelSerializer):
         style={'input_type': 'password'}
     )
     user_id = serializers.UUIDField(source='pk', read_only=True)  # Use UUIDField if you changed to UUIDField in model
-
 
 
     class Meta:
@@ -75,3 +74,9 @@ class ResponseSerializer(serializers.Serializer):
             "person_type": instance['person_type'],
             "person_answer": instance['person_answer']
         }
+    
+
+class UserQuoteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserQuote
+        fields = ['quote','author']
