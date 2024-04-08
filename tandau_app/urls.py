@@ -14,7 +14,6 @@ urlpatterns = [
 
     path('logout/', views.LogoutView.as_view(), name='logout'),
 
-    # path('forgot-password/', views.ForgotPasswordView.as_view(), name='forgot_password'),
     path('register/', views.RegisterView.as_view(), name='register'),
 
     path('questions/', views.SelectQuestionsView.as_view(), name='select-questions'),
@@ -24,13 +23,11 @@ urlpatterns = [
     path('api/location/<int:state_id>/', views.LocationTownsApiView.as_view(), name='location_town_by_id'),
     path('api/location/school/<int:town_id>', views.LocationSchoolsApiView.as_view(), name='location_school_by_id'),
 
-    path('api/main', views.MainAPIView.as_view(), name='main-page'),
+    path('api/main/', views.MainAPIView.as_view(), name='main-page'),
 
 
     path('calculate-percentages/', views.CalculatePercentageView.as_view(), name='calculate_percentages'),
 
     path('add-video/', views.AddVideoView.as_view(), name='add_video'),
-    
-    # path('api/select/',views.UserLocationCreateView.as_view(), name='user_location')
-
+  
 ]
