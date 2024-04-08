@@ -13,11 +13,10 @@ from rest_framework.exceptions import ValidationError
 import random
 from rest_framework.exceptions import ValidationError
 from .validators import CustomValidationException
-from string import digits
-import math
 import requests
+from urllib.parse import urlparse, parse_qs
 from random import sample
-from .models import Question
+from .models import Question,Video
 from collections import defaultdict
 from .models import CustomUser
 from rest_framework.authentication import TokenAuthentication
@@ -26,6 +25,8 @@ from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
 import os
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
 import json
 from random import sample
 from django.db.models import IntegerField
@@ -313,15 +314,62 @@ class CalculatePercentageView(APIView):
                 return JsonResponse(response_data)
 
         # If the person type with maximum points is not found in the JSON data
+      
         return JsonResponse({"error": "Person type not found in JSON data"}, status=404)
 
-            
+def get_youtube_video(request):
+    youtube_api_key = os.getenv("YOUTUBE_API_KEY")
+    last_day = datetime.now() - timedelta(days=1)
+    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')[:6]
+
+    # If there are no new videos in the last day, fallback to videos shown 1 week ago
+    if not new_videos:
+        last_week = datetime.now() - timedelta(weeks=1)
+        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')[:6]
     
+    list_show = []
+    for i in new_videos:
+        ids = extract_video_id(i.youtube_link)
+        # print(ids)
+        list_show.append(ids)
+
+    video_list = []
+    for video in list_show:
+        video_url = f'https://www.youtube.com/watch?v={video[0]}'
+        video_data = get_video_data(video, youtube_api_key)
+        if video_data:
+            video_list.append(
+                {'title': video_data['title'], 
+                 'description': video_data['description'],
+                 'thumbnails': video_data['thumbnails'],
+                 'url': video_url})
+    
+    return video_list
+
+def get_video_data(video_id, api_key):
+    youtube_api_url = f'https://www.googleapis.com/youtube/v3/videos?id={video_id[0]}&key={api_key}&part=snippet'
+   
+    response = requests.get(youtube_api_url)
+    if response.status_code == 200:
+        video_data = response.json()
+        if 'items' in video_data and len(video_data['items']) > 0:
+            return video_data['items'][0]['snippet']
+    return None
+
+def extract_video_id(video_url):
+    parsed_url = urlparse(video_url)
+    query_params = parse_qs(parsed_url.query)
+    video_id = query_params.get('v')
+    if video_id:
+        return video_id
+    else:
+        return None
+
 class RandomUserQuoteView(APIView):
-    def post(self, request, format=None):
-        user_id = request.data.get('user_id')  # Get user_id from request body
+    def get(self, request, format=None):
+        user_id = request.query_params.get('user_id')  # Get user_id from query parameters
         if not user_id:
-            return Response({'error': 'user_id is required in request body'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'error': 'user_id is required in query parameters'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = CustomUser.objects.get(id=user_id)  # Retrieve user object using user_id
@@ -333,7 +381,13 @@ class RandomUserQuoteView(APIView):
         if last_quote:
             # If a quote exists, return it
             serializer = UserQuoteSerializer(last_quote)
-            return Response(serializer.data)
+            collection_video = get_youtube_video(request)
+            response_data = {
+                        'kz_quotes': serializer.data['quote'],
+                        'author': serializer.data['author'],
+                        'videos':collection_video
+                    }
+            return Response(response_data)
         else:
             # Load quotes from JSON file
             with open('tandau_app/location/quotes.json', 'r') as file:
@@ -355,8 +409,20 @@ class RandomUserQuoteView(APIView):
                     user_quote = UserQuote.objects.create(user=user, quote=random_quote['kz_quotes'], author=random_quote['author'])
                     serializer = UserQuoteSerializer(user_quote)
                     # Return the quote along with the author
+                    collection_video = get_youtube_video(request)
                     response_data = {
                         'kz_quotes': random_quote['kz_quotes'],
-                        'author': random_quote['author']
+                        'author': random_quote['author'],
+                        'videos':"test"
                     }
-                    return Response(response_data)
+        return Response(response_data)
+
+
+
+class AddVideoView(APIView):
+    def post(self, request, format=None):
+        serializer = VideoSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

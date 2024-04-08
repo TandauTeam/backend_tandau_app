@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import CustomUser,Question
+from .models import *
 
 
 @admin.register(CustomUser)
@@ -11,3 +11,8 @@ class UserAdmin(admin.ModelAdmin):
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
     list_display = ('id','question_text_ru','question_text_kz','person_type')
+
+
+@admin.register(Video)
+class VideoAdmin(admin.ModelAdmin):
+    list_display = ('youtube_link','timestamp')

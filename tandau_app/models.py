@@ -6,6 +6,8 @@ from tandau_app.manager import *
 from .validators import PhoneValidator
 import uuid
 
+from django.utils import timezone
+
 class CustomUser(AbstractUser):
     username = None
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -46,3 +48,7 @@ class UserQuote(models.Model):
 
     def __str__(self):
         return f'{self.user.username} - {self.quote}'
+    
+class Video(models.Model):
+    youtube_link = models.CharField(max_length=255)
+    timestamp = models.DateTimeField(default=timezone.now)

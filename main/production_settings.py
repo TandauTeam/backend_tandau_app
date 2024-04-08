@@ -4,8 +4,11 @@ when you are in production environment.
 """
 
 from datetime import timedelta
-
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
