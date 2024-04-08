@@ -292,7 +292,7 @@ class CalculatePercentageView(APIView):
 
 class MainAPIView(APIView):
     def get(self, request, format=None):
-        user_id = request.query_params.get('user_id')  # Get user_id from query parameters
+        user_id = request.headers['user_id']  # Get user_id from query parameters
         if not user_id:
             return Response({'error': 'user_id is required in query parameters'}, status=status.HTTP_400_BAD_REQUEST)
 
