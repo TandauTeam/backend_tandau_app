@@ -24,7 +24,7 @@ urlpatterns = [
     path('api/location/<int:state_id>/', views.LocationTownsApiView.as_view(), name='location_town_by_id'),
     path('api/location/school/<int:town_id>', views.LocationSchoolsApiView.as_view(), name='location_school_by_id'),
 
-    path('random-user-quote/', views.RandomUserQuoteView.as_view(), name='random-user-quote'),
+    path('api/main', views.MainAPIView.as_view(), name='main-page'),
 
 
     path('calculate-percentages/', views.CalculatePercentageView.as_view(), name='calculate_percentages'),

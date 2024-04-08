@@ -365,7 +365,7 @@ def extract_video_id(video_url):
     else:
         return None
 
-class RandomUserQuoteView(APIView):
+class MainAPIView(APIView):
     def get(self, request, format=None):
         user_id = request.query_params.get('user_id')  # Get user_id from query parameters
         if not user_id:
