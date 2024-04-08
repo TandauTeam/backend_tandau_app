@@ -27,7 +27,7 @@ urlpatterns = [
 
 
     path('calculate-percentages/', views.CalculatePercentageView.as_view(), name='calculate_percentages'),
-
+    path('api/person/',views.GetPersonView.as_view(),name='get_person_type'),
     path('add-video/', views.AddVideoView.as_view(), name='add_video'),
-  
+
 ]

@@ -19,26 +19,21 @@ class CustomUser(AbstractUser):
     town = models.CharField(max_length=255)
     school = models.CharField(max_length=255)
     classes = models.IntegerField(null=True)
-    
+    person_type = models.CharField(max_length=50, null=True, blank=True)  # New field
+
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = []
 
     objects = CustomUserManager()
 
- 
-
 class University(models.Model):
     name = models.CharField(max_length=255,null=True, blank=True)
     description = models.TextField()
-
-
 
 class Question(models.Model):
     question_text_ru = models.TextField() # Russian question text
     question_text_kz = models.TextField()  # Kazakh question text
     person_type = models.CharField(max_length=50)  # Assuming the type of person is a string field
-
-
 
 class UserQuote(models.Model):
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE)

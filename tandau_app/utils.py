@@ -1,48 +1,117 @@
-# import random
-# from string import digits
-# import smtplib
-# import ssl
-# from email.message import EmailMessage
-# import os 
+# utils.py
+import json
+from collections import defaultdict
+from .models import *
+import requests
+
+from urllib.parse import urlparse, parse_qs
+from datetime import timedelta
+from django.conf import settings
+import os
+from dotenv import load_dotenv
+from datetime import datetime, timedelta
+
+def calculate_max_percentage(responses):
+    answer_sum_per_type = defaultdict(int)
+
+    for response in responses:
+        person_type = response.get('person_type')
+        person_answer = response.get('person_answer')
+        answer_sum_per_type[person_type] += person_answer
+
+    max_percentage = -1
+    max_person_type = None
+    for person_type, answer_sum in answer_sum_per_type.items():
+        percentage = (answer_sum / 5 * 10) * 100
+        if percentage > max_percentage:
+            max_percentage = percentage
+            max_person_type = person_type
+
+    return max_person_type
+
+def update_user_person_type(user_id, max_person_type):
+    try:
+        user = CustomUser.objects.get(id=user_id)
+        user.person_type = max_person_type
+        user.save()
+        return True, user
+    except CustomUser.DoesNotExist:
+        return False, None
+
+def load_person_info(max_person_type):
+    with open('tandau_app/location/person_types.json', 'r') as f:
+        json_data = json.load(f)
+
+    for data in json_data:
+        if max_person_type in data:
+            return data[max_person_type]
+
+    return None
+
+def get_youtube_video(request):
+    youtube_api_key = os.getenv("YOUTUBE_API_KEY")
+    last_day = datetime.now() - timedelta(days=1)
+    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')[:6]
+
+    # If there are no new videos in the last day, fallback to videos shown 1 week ago
+    if not new_videos:
+        last_week = datetime.now() - timedelta(weeks=1)
+        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')[:6]
+    
+    list_show = []
+    for i in new_videos:
+        ids = extract_video_id(i.youtube_link)
+        # print(ids)
+        list_show.append(ids)
+
+    video_list = []
+    for video in list_show:
+        video_url = f'https://www.youtube.com/watch?v={video[0]}'
+        video_data = get_video_data(video, youtube_api_key)
+        if video_data:
+            video_list.append(
+                {'title': video_data['title'], 
+                 'description': video_data['description'],
+                 'thumbnails': video_data['thumbnails'],
+                 'url': video_url})
+    
+    return video_list
 
 
-# SENDER = os.getenv('SENDER_EMAIL')
-# PASSWORD = os.getenv('SENDER_PASSWORD')
+def generate_response_data(person_info):
+    title_name = person_info['title_name']
+    description = person_info['description']
+    image = person_info['image']
+    list_info = person_info['list_info']
+    profession_list = person_info['profession_list']
 
-# SENDER="tandauapp@gmail.com"
-# PASSWORD="2003720an" 
-# print(SENDER)
-# def generate_otp(length=6):
-#     return ''.join(random.choices(digits, k=length))
+    response_data = {
+        "title_name": title_name,
+        "description": description,
+        "image": image,
+        "list_info": list_info,
+        "profession_list": profession_list
+    }
 
-# def send_reset_password_email(email, otp):
-#     email_content = f'Your OTP for password reset is: {otp}'
+    return response_data
 
-#     email_message = EmailMessage()
-#     email_message["From"] = SENDER
-#     email_message["To"] = email
-#     email_message["Subject"] = "Password Reset OTP"
-#     email_message.set_content(email_content)
 
-#     smtp_server = "smtp.gmail.com"
-#     smtp_port = 465
 
-#     context = ssl.create_default_context()
-#     with smtplib.SMTP_SSL(smtp_server, smtp_port, context=context) as server:
-#         server.login(SENDER, PASSWORD)
-#         server.send_message(email_message)
+def get_video_data(video_id, api_key):
+    youtube_api_url = f'https://www.googleapis.com/youtube/v3/videos?id={video_id[0]}&key={api_key}&part=snippet'
+   
+    response = requests.get(youtube_api_url)
+    if response.status_code == 200:
+        video_data = response.json()
+        if 'items' in video_data and len(video_data['items']) > 0:
+            return video_data['items'][0]['snippet']
+    return None
 
-# def reset_password_with_otp(email):
-#     otp = generate_otp()
-#     # Here you should associate this OTP with the user's email address, 
-#     # either by storing it in the database or using some other method.
-
-#     # For demonstration purposes, I'm printing the OTP. In production, 
-#     # you should send it via email.
-#     print("Generated OTP:", otp)
-
-#     # Sending OTP to the user's email
-#     send_reset_password_email(email, otp)
-
-# # Example usage:
-# reset_password_with_otp('user@example.com')
+def extract_video_id(video_url):
+    parsed_url = urlparse(video_url)
+    query_params = parse_qs(parsed_url.query)
+    video_id = query_params.get('v')
+    if video_id:
+        return video_id
+    else:
+        return None

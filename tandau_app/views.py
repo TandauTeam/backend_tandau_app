@@ -14,10 +14,8 @@ import random
 from rest_framework.exceptions import ValidationError
 from .validators import CustomValidationException
 import requests
-from urllib.parse import urlparse, parse_qs
 from random import sample
-from .models import Question,Video
-from collections import defaultdict
+from .models import *
 from .models import CustomUser
 from rest_framework.authentication import TokenAuthentication
 from django.http import JsonResponse
@@ -31,7 +29,7 @@ import json
 from random import sample
 from django.db.models import IntegerField
 from django.db.models.functions import Cast
-
+from .utils import *
 
 class LoginView(APIView):
     serializer_class = LoginSerializer
@@ -270,100 +268,27 @@ class UserLoginAPIView(APIView):
     
 
 class CalculatePercentageView(APIView):
-
     def post(self, request):
-        with open('tandau_app/location/person_types.json', 'r') as f:
-            json_data = json.load(f)
+        user_id = request.query_params.get('user_id')
         responses = request.data.get('responses', [])
 
-        # Dictionary to store the sum of person_answer for each person_type
-        answer_sum_per_type = defaultdict(int)
+        max_person_type = calculate_max_percentage(responses)
 
-        # Iterate through responses and accumulate person_answer values
-        for response in responses:
-            person_type = response.get('person_type')
-            person_answer = response.get('person_answer')
-            answer_sum_per_type[person_type] += person_answer
+        if not user_id:
+            return JsonResponse({"error": "User ID not provided in headers"}, status=400)
 
-        # Calculate percentage for each person type
-        max_percentage = -1  # Initialize max_percentage to a value lower than any possible percentage
-        max_person_type = None  # Variable to store the person_type with the highest percentage
-        for person_type, answer_sum in answer_sum_per_type.items():
-            percentage = (answer_sum / 5 * 10) * 100  # Assuming each person type has 9 questions
-            if percentage > max_percentage:
-                max_percentage = percentage
-                max_person_type = person_type
+        success, user = update_user_person_type(user_id, max_person_type)
+        if not success:
+            return JsonResponse({"error": "User does not exist"}, status=404)
+
+        person_info = load_person_info(max_person_type)
+        if not person_info:
+            return JsonResponse({"error": "Person type not found in JSON data"}, status=404)
+
+        response_data = generate_response_data(person_info)
+        return JsonResponse(response_data)
         
-        for data in json_data:
-            if max_person_type in data:
-                person_info = data[max_person_type]
-                title_name = person_info['title_name']
-                description = person_info['description']
-                image = person_info['image']
-                list_info = person_info['list_info']
-                profession_list = person_info['profession_list']
 
-
-                response_data = {
-                    "title_name": title_name,
-                    "description": description,
-                    "image": image,
-                    "list_info": list_info,
-                    "profession_list": profession_list
-                }
-                return JsonResponse(response_data)
-
-        # If the person type with maximum points is not found in the JSON data
-      
-        return JsonResponse({"error": "Person type not found in JSON data"}, status=404)
-
-def get_youtube_video(request):
-    youtube_api_key = os.getenv("YOUTUBE_API_KEY")
-    last_day = datetime.now() - timedelta(days=1)
-    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')[:6]
-
-    # If there are no new videos in the last day, fallback to videos shown 1 week ago
-    if not new_videos:
-        last_week = datetime.now() - timedelta(weeks=1)
-        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')[:6]
-    
-    list_show = []
-    for i in new_videos:
-        ids = extract_video_id(i.youtube_link)
-        # print(ids)
-        list_show.append(ids)
-
-    video_list = []
-    for video in list_show:
-        video_url = f'https://www.youtube.com/watch?v={video[0]}'
-        video_data = get_video_data(video, youtube_api_key)
-        if video_data:
-            video_list.append(
-                {'title': video_data['title'], 
-                 'description': video_data['description'],
-                 'thumbnails': video_data['thumbnails'],
-                 'url': video_url})
-    
-    return video_list
-
-def get_video_data(video_id, api_key):
-    youtube_api_url = f'https://www.googleapis.com/youtube/v3/videos?id={video_id[0]}&key={api_key}&part=snippet'
-   
-    response = requests.get(youtube_api_url)
-    if response.status_code == 200:
-        video_data = response.json()
-        if 'items' in video_data and len(video_data['items']) > 0:
-            return video_data['items'][0]['snippet']
-    return None
-
-def extract_video_id(video_url):
-    parsed_url = urlparse(video_url)
-    query_params = parse_qs(parsed_url.query)
-    video_id = query_params.get('v')
-    if video_id:
-        return video_id
-    else:
-        return None
 
 class MainAPIView(APIView):
     def get(self, request, format=None):
@@ -426,3 +351,25 @@ class AddVideoView(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class GetPersonView(APIView):
+    def get(self, request):
+        user_id = request.headers["user_id"]
+        print(user_id)
+
+        if not user_id:
+            return JsonResponse({"error": "User ID not provided in headers"}, status=400)
+
+        try:
+            user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return JsonResponse({"error": "User does not exist"}, status=404)
+
+        person_info = load_person_info(user.person_type)
+        if not person_info:
+            return JsonResponse({"error": "Person type not found in JSON data"}, status=404)
+
+        response_data = generate_response_data(person_info)
+        return JsonResponse(response_data)
+
