@@ -285,7 +285,7 @@ class UserLoginAPIView(APIView):
 
 class CalculatePercentageView(APIView):
     def post(self, request):
-        user_id = request.query_params.get('user_id')
+        user_id = request.headers['user_id']
         responses = request.data.get('responses', [])
 
         max_person_type = calculate_max_percentage(responses)
