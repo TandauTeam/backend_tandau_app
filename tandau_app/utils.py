@@ -50,13 +50,13 @@ def load_person_info(max_person_type):
 
 def get_youtube_video(request):
     youtube_api_key = os.getenv("YOUTUBE_API_KEY")
-    last_day = datetime.now() - timedelta(days=1)
-    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')[:6]
+    last_day = datetime.now() - timedelta(days=7)
+    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')[:4]
 
     # If there are no new videos in the last day, fallback to videos shown 1 week ago
     if not new_videos:
         last_week = datetime.now() - timedelta(weeks=1)
-        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')[:6]
+        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')[:4]
     
     list_show = []
     for i in new_videos:

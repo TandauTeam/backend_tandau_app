@@ -318,7 +318,7 @@ class MainAPIView(APIView):
             return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
 
         # Check if the user already has a quote generated within the last 24 hours
-        last_quote = UserQuote.objects.filter(user=user, timestamp__gte=timezone.now()-timedelta(days=1)).first()
+        last_quote = UserQuote.objects.filter(user=user, timestamp__gte=timezone.now()-timedelta(days=7)).first()
         if last_quote:
             # If a quote exists, return it
             serializer = UserQuoteSerializer(last_quote)
