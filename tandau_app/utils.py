@@ -78,6 +78,35 @@ def get_youtube_video(request):
     return video_list
 
 
+def get_youtube_video_total(request):
+    youtube_api_key = os.getenv("YOUTUBE_API_KEY")
+    last_day = datetime.now() - timedelta(days=7)
+    new_videos = Video.objects.filter(timestamp__gte=last_day).order_by('-timestamp')
+
+    # If there are no new videos in the last day, fallback to videos shown 1 week ago
+    if not new_videos:
+        last_week = datetime.now() - timedelta(weeks=2)
+        new_videos = Video.objects.filter(timestamp__gte=last_week).order_by('-timestamp')
+    
+    list_show = []
+    for i in new_videos:
+        ids = extract_video_id(i.youtube_link)
+        # print(ids)
+        list_show.append(ids)
+
+    video_list = []
+    for video in list_show:
+        video_url = f'https://www.youtube.com/watch?v={video[0]}'
+        video_data = get_video_data(video, youtube_api_key)
+        if video_data:
+            video_list.append(
+                {'title': video_data['title'], 
+                 'description': video_data['description'],
+                 'thumbnails': video_data['thumbnails'],
+                 'url': video_url})
+    
+    return video_list
+
 def generate_response_data(person_info):
     title_name = person_info['title_name']
     description = person_info['description']

@@ -364,10 +364,8 @@ class MainAPIView(APIView):
 class VideoView(APIView):
 
     def get(self,request):
-        videos = Video.objects.all()
-        serializer = VideoSerializer(data=videos,many=True)
-        serializer.is_valid()
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        collection_videos = get_youtube_video_total(request)
+        return Response(collection_videos, status=status.HTTP_200_OK)
     
     def post(self, request, format=None):
         serializer = VideoSerializer(data=request.data)
