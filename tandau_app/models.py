@@ -14,7 +14,7 @@ class CustomUser(AbstractUser):
     email = models.EmailField(_('email address'), unique=True)
     phone_regex = RegexValidator(regex=r'^\+?1?\d{9,15}$', message="Телефон нөмірі форматта енгізілуі керек:'+7(***)-***-**-**'.")
     phone_number = models.CharField(validators=[PhoneValidator.validate], max_length=17, null=True, blank=True)
-    image = models.ImageField(upload_to='user_images', null=True, blank=True)
+    image = models.ImageField(upload_to='static/user_images', null=True, blank=True)
     state = models.CharField(max_length=255)
     town = models.CharField(max_length=255)
     school = models.CharField(max_length=255)

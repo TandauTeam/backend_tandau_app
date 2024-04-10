@@ -6,6 +6,8 @@ urlpatterns = [
 
 
     path('profile/<str:user_id>/', views.UserProfileView.as_view(), name='user_profile'),
+    path('profile/upload-avatar/', views.UserProfileView.as_view(), name='upload-avatar'),
+
     path('register/location/<str:pk>', views.LocationUpdateAPIView.as_view(), name='update-location'),
 
     path('login/v1', jwt_views.TokenObtainPairView.as_view(), name='token_obtain_pair'),
@@ -26,8 +28,9 @@ urlpatterns = [
     path('api/main/', views.MainAPIView.as_view(), name='main-page'),
 
 
+
     path('calculate-percentages/', views.CalculatePercentageView.as_view(), name='calculate_percentages'),
     path('api/person/',views.GetPersonView.as_view(),name='get_person_type'),
-    path('add-video/', views.AddVideoView.as_view(), name='add_video'),
-
+    path('add-video/', views.VideoView.as_view(), name='add_video'),
+    path('videolist/', views.VideoView.as_view(), name='get_video_list'),
 ]

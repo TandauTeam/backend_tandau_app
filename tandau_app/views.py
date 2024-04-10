@@ -234,6 +234,23 @@ class LocationUpdateAPIView(generics.CreateAPIView):
 class UserProfileView(generics.RetrieveAPIView):
     serializer_class = UserProfileSerializer
 
+    def post(self, request, *args, **kwargs):
+        user_id = request.headers.get('user-id')
+        if not user_id:
+            return Response({'error': 'User ID missing in headers'}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            user = CustomUser.objects.get(pk=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({'error': 'User does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        # Update the user with the uploaded image
+        user.image = request.data.get('image')
+        user.save()
+
+        serializer = self.get_serializer(user)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
     def retrieve(self, request, *args, **kwargs):
         user_id = kwargs.get('user_id')  # Get the user_id from URL parameters
         if user_id is not None:
@@ -260,7 +277,6 @@ class UserLoginAPIView(APIView):
                 token, _ = Token.objects.get_or_create(user=user)
                 return Response({'user_id': user.id, 'token': token.key}, status=status.HTTP_200_OK)
             
-                # return Response({'user_id': user.id, 'access_token':token }, status=status.HTTP_200_OK)
             else:
                 # If authentication fails, return error message
                 return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -308,10 +324,11 @@ class MainAPIView(APIView):
             serializer = UserQuoteSerializer(last_quote)
             collection_video = get_youtube_video(request)
             response_data = {
+                        'username': f'{user.first_name} {user.last_name}',
                         'kz_quotes': serializer.data['quote'],
                         'author': serializer.data['author'],
-                        'videos':collection_video
-                    }
+                        'videos':collection_video}
+            
             return Response(response_data)
         else:
             # Load quotes from JSON file
@@ -336,15 +353,22 @@ class MainAPIView(APIView):
                     # Return the quote along with the author
                     collection_video = get_youtube_video(request)
                     response_data = {
-                        'kz_quotes': random_quote['kz_quotes'],
-                        'author': random_quote['author'],
-                        'videos':"test"
+                        'kz_quotes': serializer.data['quote'],
+                        'author': serializer.data['author'],
+                        'videos':collection_video
                     }
         return Response(response_data)
 
 
 
-class AddVideoView(APIView):
+class VideoView(APIView):
+
+    def get(self,request):
+        videos = Video.objects.all()
+        serializer = VideoSerializer(data=videos,many=True)
+        serializer.is_valid()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    
     def post(self, request, format=None):
         serializer = VideoSerializer(data=request.data)
         if serializer.is_valid():
