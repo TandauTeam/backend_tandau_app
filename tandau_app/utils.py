@@ -3,13 +3,16 @@ import json
 from collections import defaultdict
 from .models import *
 import requests
-
 from urllib.parse import urlparse, parse_qs
 from datetime import timedelta
 from django.conf import settings
 import os
 from dotenv import load_dotenv
 from datetime import datetime, timedelta
+
+load_dotenv()
+
+url = os.environ["URL_PROD"]
 
 def calculate_max_percentage(responses):
     answer_sum_per_type = defaultdict(int)
@@ -111,8 +114,12 @@ def generate_response_data(person_info):
     title_name = person_info['title_name']
     description = person_info['description']
     image = person_info['image']
+    image =  f"{url}/{image}"
     list_info = person_info['list_info']
     profession_list = person_info['profession_list']
+    for item in list_info:
+        if "image" in item:
+            item["image"] = f"{url}/{item['image']}"
 
     response_data = {
         "title_name": title_name,
