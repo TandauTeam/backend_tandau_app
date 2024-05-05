@@ -100,13 +100,20 @@ class SelectQuestionsView(APIView):
             questions_per_type.setdefault(question.person_type, []).append(question)
 
         selected_questions = []
+        selected_question_ids = set()  # Keep track of selected question IDs
 
         # Sort by person_type integer
         for person_type, questions in sorted(questions_per_type.items(), key=lambda x: int(x[0])):
             if len(questions) >= 5:
-                selected_questions.extend(sample(questions, 5))
+                selected = sample(questions, min(5, len(questions)))  # Get a sample of 5 or all questions if less than 5
             else:
-                selected_questions.extend(questions)  
+                selected = questions
+
+            for q in selected:
+                if q.id not in selected_question_ids:  # Check if question ID is not already selected
+                    selected_questions.append(q)
+                    selected_question_ids.add(q.id)  # Add the question ID to the set
+
         serializer = QuestionSerializer(selected_questions, many=True)
         return Response(serializer.data)
 

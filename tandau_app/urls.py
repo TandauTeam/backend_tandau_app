@@ -26,9 +26,6 @@ urlpatterns = [
     path('api/location/school/<int:town_id>', views.LocationSchoolsApiView.as_view(), name='location_school_by_id'),
 
     path('api/main/', views.MainAPIView.as_view(), name='main-page'),
-
-
-
     path('calculate-percentages/', views.CalculatePercentageView.as_view(), name='calculate_percentages'),
     path('api/person/',views.GetPersonView.as_view(),name='get_person_type'),
     path('add-video/', views.VideoView.as_view(), name='add_video'),
