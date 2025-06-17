@@ -25,10 +25,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = [
-    'backendtandauapp-production.up.railway.app',
-    # You might also have other hosts here for development or other environments
-]
+ALLOWED_HOSTS = os.environ["ALLOWED_HOSTS"]
 
 # Edit the following line and place your railway URL, and your custom URL in the array.
 # Make sure CSRF_TRUSTED_ORIGINS also looks like this:
