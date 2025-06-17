@@ -10,7 +10,15 @@ from django.utils.translation import gettext_lazy as _ # Changed to gettext_lazy
 #     def __init__(self, error_dict):
 #         self.error_dict = error_dict
 # ---
+# tandau_app/validators.py
 
+# ... (other imports)
+
+class CustomValidationException(Exception):
+    def __init__(self, error_dict):
+        self.error_dict = error_dict
+
+# ... (your validators)
 class NumberValidator(object):
     def __init__(self, min_digits=1): # Changed default to 1, as per your settings
         self.min_digits = min_digits
