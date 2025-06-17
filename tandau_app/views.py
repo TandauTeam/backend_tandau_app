@@ -30,6 +30,8 @@ from django.db.models import IntegerField
 from django.db.models.functions import Cast
 from .utils import *
 
+from rest_framework.exceptions import ValidationError 
+
 class LoginView(APIView):
     serializer_class = LoginSerializer
     permission_classes = [permissions.AllowAny]
@@ -69,17 +71,20 @@ class RegisterView(generics.CreateAPIView):
             return response
         except ValidationError as e:
             # Handle other validation errors
-            if 'email' in e.detail and 'user with this email address already exists.' in e.detail['email']:
+            if 'email' in e.detail and 'user with this email address already exists.' in e.detail['email'][0]:
                 error_detail = {'detail': 'Осы электрондық пошта мекенжайы бар пайдаланушы бұрыннан бар.'}
                 return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
-            elif 'phone_number' in e.detail and "Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'." in e.detail['phone_number']:
+            elif 'phone_number' in e.detail and "Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'." in e.detail['phone_number'][0]:
                 error_detail = {'detail':"Телефон нөмірі форматта енгізілуі керек: '+7(***)-***-**-**'."}
                 return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
             elif 'phone_number' in e.detail:
-                return Response({'detail':e},status=status.HTTP_400_BAD_REQUEST)
+                # Corrected line: Access e.detail to get serializable content
+                return Response({'detail': e.detail}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 # For other validation errors, return the default error response
-                return super().handle_exception(e)
+                # It's usually better to return e.detail directly for generic validation errors
+                return Response({'detail': e.detail}, status=status.HTTP_400_BAD_REQUEST)
+
 
 
 class SelectQuestionsView(APIView):
