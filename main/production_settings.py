@@ -31,14 +31,17 @@ ALLOWED_HOSTS = [
 ]
 
 # Edit the following line and place your railway URL, and your custom URL in the array.
+# Make sure CSRF_TRUSTED_ORIGINS also looks like this:
 CSRF_TRUSTED_ORIGINS = [
-    "https://*.up.railway.app", 
+    "https://*.up.railway.app", # This is okay for a wildcard on subdomains
     "https://backendtandauapp-production.up.railway.app",
+    # If you have a custom domain, add it here too:
+    # "https://your-custom-domain.com",
 ]
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOWED_ORIGINS = [
-    'http://*',
-    'https://*',
+    "https://*.up.railway.app", # This is okay for a wildcard on subdomains
+    "https://backendtandauapp-production.up.railway.app",
 ]
 # Application definition
 
