@@ -26,12 +26,6 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'localhost',
-    '127.0.0.1',
-    'https://backendtandauapp-production.up.railway.app', # Add this line
-    'https://*',
-    'http://backendtandauapp-production.up.railway.app', # Add this line
-    'http://*',
     'backendtandauapp-production.up.railway.app',
     # You might also have other hosts here for development or other environments
 ]
