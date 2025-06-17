@@ -12,7 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.exceptions import ValidationError
 import random
 from rest_framework.exceptions import ValidationError
-from .validators import CustomValidationException
 import requests
 from random import sample
 from .models import *
@@ -68,11 +67,6 @@ class RegisterView(generics.CreateAPIView):
         try:
             response = super().create(request, *args, **kwargs)
             return response
-        except CustomValidationException as e:
-            # Handle custom validation exception
-            error_detail = e.error_dict
-            
-            return Response(error_detail, status=status.HTTP_400_BAD_REQUEST)
         except ValidationError as e:
             # Handle other validation errors
             if 'email' in e.detail and 'user with this email address already exists.' in e.detail['email']:
